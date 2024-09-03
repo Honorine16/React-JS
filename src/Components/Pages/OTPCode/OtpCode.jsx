@@ -1,24 +1,63 @@
-import React, { useState } from 'react'
-import Input from '../../Input/Input'
-import Button from '../../Button/Button'
+import React, { useState } from "react";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
+import axios from "axios";
+import { ToastContainer } from "react-toastify";
+import Input from "../../Input/Input";
+import Button from "../../Button/Button";
 
 export default function OtpCode() {
-    const [OtpCode, setOtpCode] = useState('')
-    
+  const [OtpCode, setOtpCode] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const params = useParams();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    const formData = new FormData();
+
+    formData.set("code", OtpCode);
+    formData.set("email", params.email);
+
+    const response = await axios.post(
+      "http://127.0.0.1:8000/api/v1.0.0/otp-code",
+      formData
+    );
+
+    if (response.data.success) {
+      navigate("/dashboard");
+      setIsLoading(false)
+    } else {
+      toast.error(response.data.message);
+      setIsLoading(false)
+    }
+  };
   return (
     <div>
-      <p>Un code vous a été sur votre e-mail ({localStorage.getItem('email')}). Veuillez le saisir</p>
-      <form action="">
-        <Input 
-        type={'text'} 
-        label={'OTP Code'} 
-        value={OtpCode} 
-        placeHolder={'Veuillez saisir le code...'} 
-        reference={'otp'} 
-        onChange={(e) => {setOtpCode(e.target.value)}}
+      <ToastContainer />
+      <p>
+        Un code vous a été envoyé dans votre boîte mail(
+        {localStorage.getItem("email")}). Vérifiez-le et veuillez le saisir
+      </p>
+      <form action="" onSubmit={handleSubmit}>
+        <Input
+          type={"text"}
+          label={"OTP Code"}
+          value={OtpCode}
+          reference={"otp"}
+          placeholder={"Saisir le code ici"}
+          onChange={(e) => {
+            setOtpCode(e.target.value);
+          }}
         />
-        <Button text={'soumettre'} type={'submit'}/>
+        <Button 
+          disabled={isLoading}
+          text={isLoading ? "Chargement ..." : "Soumettre"}
+          type={"submit"}
+        />  
       </form>
     </div>
-  )
+  );
 }

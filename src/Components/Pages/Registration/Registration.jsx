@@ -1,98 +1,150 @@
-import React, { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import Button from '../../Button/Button'
-import Input from '../../Input/Input'
-import Alert from '../../Alert/Alert'
-import { ToastContainer, toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+// import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import "react-toastify/dist/ReactToastify.css";
+import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import Input from "../../Input/Input";
+import Button from "../../Button/Button";
+import { useState } from "react";
 
 export default function Registration() {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [passwordConfirm, setPasswordConfirm] = useState('')
+  const [error, setError] = useState(false);
 
-    const [error, setError] = useState(false)
-    const navigate = useNavigate()
-    
-    const [errorText, setErrorText] = useState()
-    const handleSubmit = (e) => {
-        e.preventDefault()
-        setError(false)
-        setErrorText("")
-        if (email.trim().length < 6 || email.trim().length >= 32 ) {
-            setError(true)
-            const errorMessage = "L'e-mail doit être compris entre 6 et 32 caractères"
-            setErrorText(errorMessage)
-            toast.error(errorMessage)
-            return
-        }
+  const navigate = useNavigate();
 
-        if (password.trim().length < 6 || password.trim().length >= 32) {
-            setError(true)
-            const errorMessage = "Le mot de passe doit être compris entre 6 et 32 caractères"
-            toast.error(errorMessage)
-            return
-        }
-        if (passwordConfirm !== password.trim()) {
-            setError(true)
-            const errorMessage = "Les deux mots de passe ne correspondent pas"
-            toast.error(errorMessage)
-            return
-        }
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(false);
 
-        localStorage.setItem("email", email)
-
-        navigate("/otp-code") 
+    if (email.trim().length < 6 || email.trim().length > 32) {
+      setError(true);
+      const errorMessage = "L'email doit être compris entre 6 et 32 caractères";
+      toast.error(errorMessage);
+      return;
     }
-    
+
+    if (password.trim().length < 6 || password.trim().length > 32) {
+      setError(true);
+      const errorMessage = "L'email doit être compris entre 6 et 32 caractères";
+      toast.error(errorMessage);
+      return;
+    }
+
+    if (passwordConfirm.trim() != password.trim()) {
+      setError(true);
+      const errorMessage = "Les deux mot de passe sont différents";
+      toast.error(errorMessage);
+      return;
+    }
+
+    localStorage.setItem("email", email);
+
+    setIsLoading(true);
+    const formData = new FormData();
+
+    formData.set("name", name);
+    formData.set("email", email);
+    formData.set("password", password);
+    formData.set("passwordConfirm", passwordConfirm);
+
+    const response = await axios.post(
+      "http://127.0.0.1:8000/api/v1.0.0/register",
+      formData
+    );
+
+    if (response.data.success) {
+      toast.success(response.data.message);
+      setIsLoading(false);
+      setTimeout(function () {
+        navigate("/otp-code/" + email);
+      }, 3000);
+    } else {
+      console.log(response.data);
+
+      if (response.data.data.name !== undefined) {
+        toast.error(response.data.data.name[0]);
+      } else if (response.data.data.email !== undefined) {
+        toast.error(response.data.data.email[0]);
+      } else if (response.data.data.password !== undefined) {
+        toast.error(response.data.data.password[0]);
+      } else if (response.data.data.passwordConfirm !== undefined) {
+        toast.error(response.data.data.passwordConfirm[0]);
+      }
+
+      setIsLoading(false);
+    }
+  };
   return (
+    <div id="container">
+      <ToastContainer stacked />
 
-    <div>
-        <ToastContainer stacked/>
-    <h1>Inscription</h1>
-    <form onSubmit={handleSubmit}>
-      <p>Renseigner vos informations pour vous inscrire</p>
-      {error && <Alert text={errorText}/>}
-      <Input
-      label={'Email'}
-      reference={'email'} 
-      type={'text'} 
-      value={email} 
-      placeHolder={'Saisir l\'adresse e-mail ici... '} 
-      onChange={ (e) => {
-        setEmail(e.target.value)
-      }} 
-      /><br/>
-      <div>{email}</div>
-      <Input 
-      label={'Mot de passe'}
-      reference={'password'} 
-      type={'password'} 
-      value={password} 
-      placeHolder={'Saisir le mot de passe ici... '} 
-      onChange={ (e) => {
-        setPassword(e.target.value)
-      }} 
-      /><br/>
-      <Input 
-      label={'Confirmation de votre mot de passe'}
-      reference={'passwordConfirm'} 
-      type={'password'} 
-      value={passwordConfirm} 
-      placeHolder={'Confirmer votre mot de passe ici... '} 
-      onChange={ (e) => {
-        setPasswordConfirm(e.target.value)
-      }} 
-      /><br/>
-      <div>
-        <Button type={'submit'} text={'Soumettre'} /><br/>
-        <Button type={'reset'} text={'Annuler'} />
-      </div>
-      <Link to={'/'} >Connexion</Link>
-    </form>
+      <h1>Inscription</h1>
+      <form action="" onSubmit={handleSubmit}>
+        <p>Renseignez vos information Inscription pour vous inscrire</p>
+        <Input
+          label={"name"}
+          reference={"name"}
+          type={"text"}
+          value={name}
+          placeholder={"Saisir le nom ici"}
+          onChange={(e) => {
+            setName(e.target.value);
+          }}
+        />
+        <Input
+          label={"email"}
+          reference={"email"}
+          type={"text"}
+          value={email}
+          placeholder={"Saisir l'adresse e-mail ici"}
+          onChange={(e) => {
+            setEmail(e.target.value);
+          }}
+        />
 
-      
+        <Input
+          label={"Mot de passe"}
+          reference={"password"}
+          type={"password"}
+          value={password}
+          placeholder={"Saisir le mot de passe ici"}
+          onChange={(e) => {
+            setPassword(e.target.value);
+          }}
+        />
+
+        {/* Afficher les données saisient dans le champ en bat de l'input
+        <div>{password}</div> */}
+
+        <Input
+          label={"Confirmation"}
+          reference={"passwordConfirm"}
+          type={"password"}
+          value={passwordConfirm}
+          placeholder={"Saisir le mot de passe ici"}
+          onChange={(e) => {
+            setPasswordConfirm(e.target.value);
+          }}
+        />
+
+        <div>
+          <Button
+            disabled={isLoading}
+            type={"submit"}
+            text={isLoading ? "Chargement ..." : "Soumettre"}
+          />
+          <Button type={"reset"} text={"Anuler"} />
+        </div>
+        <div>
+          <Link to={"/"}>Connexion</Link>
+        </div>
+      </form>
     </div>
-  )
+  );
 }
